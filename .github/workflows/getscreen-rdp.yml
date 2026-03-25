@@ -1,0 +1,48 @@
+name: Free Windows RDP - Getscreen.me (Browser Only)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rdp:
+    runs-on: windows-latest
+
+    steps:
+      - name: Download Getscreen Agent
+        shell: powershell
+        run: |
+          Invoke-WebRequest -Uri "https://getscreen.me/download/getscreen.exe" -OutFile "$env:TEMP\getscreen.exe"
+          Copy-Item -Path "$env:TEMP\getscreen.exe" -Destination "getscreen.exe"
+
+      - name: Install + Register Getscreen
+        shell: powershell
+        run: |
+          .\getscreen.exe -install -register ${{ secrets.GETSCREEN_EMAIL }}
+          .\getscreen.exe -config "name='GitHub-RDP' control=true fast_access=true file_transfer=true disable_confirmation=true"
+          echo "✅ Getscreen agent installed and registered successfully!"
+          Start-Sleep -Seconds 15
+
+      - name: Connection Instructions (Phone-Friendly)
+        run: |
+          echo "🎉 YOUR TEMPORARY WINDOWS DESKTOP IS READY!"
+          echo ""
+          echo "📱 Connect from your phone browser (NO APP needed):"
+          echo "1. Open https://getscreen.me in your phone browser"
+          echo "2. Log in with the SAME email you used for the secret"
+          echo "3. Look for device named 'GitHub-RDP' (green online dot)"
+          echo "4. Tap the device → it opens full screen control in browser"
+          echo ""
+          echo "✅ You now have full Windows desktop control on your phone!"
+          echo ""
+          echo "⏰ Session runs up to 6 hours. When it dies → just re-run this workflow."
+          echo ""
+          echo "⚠️ Keep this page open so the runner stays alive."
+
+      - name: Keep Runner Alive (prevents early stop)
+        shell: powershell
+        run: |
+          $end = (Get-Date).AddHours(5.5)
+          while ((Get-Date) -lt $end) {
+            Write-Output "✅ Still running - $(Get-Date -Format 'HH:mm:ss')"
+            Start-Sleep -Seconds 300
+          }
